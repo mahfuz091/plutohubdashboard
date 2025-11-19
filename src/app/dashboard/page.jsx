@@ -4,6 +4,8 @@ import Blog from "@/components/Dashboard/Blog/Blog";
 import { postList } from "../actions/blog/blog.actions";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+// Force server dynamic rendering to avoid "Dynamic server usage" build error
+export const dynamic = "force-dynamic";
 export default async function Page() {
   const allPost = await postList();
   console.log("allPost", allPost);
