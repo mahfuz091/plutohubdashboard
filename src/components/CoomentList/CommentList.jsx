@@ -11,6 +11,15 @@ import {
   rejectComment,
   deleteComment,
 } from "@/app/actions/blog/comment.actions";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+
+import { MoreVertical } from "lucide-react";
 
 const CommentList = () => {
   const [comments, setComments] = useState([]);
@@ -66,24 +75,43 @@ const CommentList = () => {
     { title: "Post", key: "post", render: (_, record) => <span className="font-medium text-blue-600">{record?.post?.title || "N/A"}</span> },
     { title: "Author", key: "author", render: (_, record) => <span className="text-gray-600">{record?.post?.author?.name || "N/A"}</span> },
     { title: "Status", dataIndex: "approved", key: "approved", render: (approved) => statusTag(approved) },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Space>
-          {record.approved !== true && <Check className="w-7 h-7 rounded-md p-1 bg-green-500 text-white cursor-pointer" onClick={() => handleApprove(record.id)} />}
-          {record.approved !== false && <XCircle className="w-7 h-7 bg-orange-500 p-1 rounded-md text-white cursor-pointer" onClick={() => handleReject(record.id)} />}
-          <Popconfirm
-            title="Are you sure to delete this comment?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Trash2 className="w-7 h-7 rounded-md bg-red-500 text-white cursor-pointer p-1" />
-          </Popconfirm>
-        </Space>
-      ),
-    },
+   {
+  title: "Actions",
+  key: "actions",
+  render: (_, record) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="p-2 rounded-md border bg-white hover:bg-gray-100">
+          <MoreVertical className="w-5 h-5" />
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent className="w-40">
+        {record.approved !== true && (
+          <DropdownMenuItem onClick={() => handleApprove(record.id)}>
+            <Check className="w-4 h-4 mr-2 text-green-600" /> Approve
+          </DropdownMenuItem>
+        )}
+
+        {record.approved !== false && (
+          <DropdownMenuItem onClick={() => handleReject(record.id)}>
+            <XCircle className="w-4 h-4 mr-2 text-orange-500" /> Reject
+          </DropdownMenuItem>
+        )}
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          className="text-red-600"
+          onClick={() => handleDelete(record.id)}
+        >
+          <Trash2 className="w-4 h-4 mr-2" /> Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ),
+}
+
   ];
 
   return (
