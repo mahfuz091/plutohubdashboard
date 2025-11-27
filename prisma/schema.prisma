@@ -33,10 +33,10 @@ model Post {
   postSlug        String        @unique
   shortDesc       String?
   bannerImage     String
-  bannerAltText   String? // new: image ALT text (SEO)
-  metaTitle       String?       @db.VarChar(70) // new: meta title
-  metaDescription String?       @db.VarChar(160) // new: meta description
-  canonicalUrl    String? // new: custom canonical URL
+  bannerAltText   String? 
+  metaTitle       String?       @db.VarChar(70) 
+  metaDescription String?       @db.VarChar(160) 
+  canonicalUrl    String?
   content         Json
   author          User?         @relation(fields: [authorId], references: [id])
   authorId        String?
@@ -54,11 +54,15 @@ model Comment {
   name      String
   email     String
   content   String
-  post      Post     @relation(fields: [postId], references: [id])
-  postId    String
+  approved  Boolean?   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
 }
+
+
+
 
 model BlogCategory {
   id        String   @id @default(uuid())

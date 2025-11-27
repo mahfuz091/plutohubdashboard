@@ -18,7 +18,10 @@ import {
   IconSettings,
   IconUsers,
   IconPlus,
+  IconFileText,
+  IconMessageCircle,
 } from "@tabler/icons-react";
+
 import { Folder } from "lucide-react";
 import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
@@ -41,23 +44,28 @@ const data = {
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: IconListDetails,
-    },
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: IconListDetails,
+  },
+  {
+    title: "Category",
+    url: "/dashboard/add-category",
+    icon: Folder,
+  },
+  {
+    title: "Add-Blog",
+    url: "/dashboard/add-blog",
+    icon: IconFileText,  
+  },
+  {
+    title: "Comments",
+    url: "/dashboard/comments",
+    icon: IconMessageCircle, 
+  },
+],
 
-    {
-      title: "Category",
-      url: "/dashboard/add-category",
-      icon: Folder,
-    },
-    {
-      title: "Add-Blog",
-      url: "/dashboard/add-blog",
-      icon: IconPlus,
-    },
-  ],
   navClouds: [
     {
       title: "Capture",
