@@ -5,7 +5,20 @@ import ImageTool from "@editorjs/image";
 import Quote from "@editorjs/quote";
 import Code from "@editorjs/code";
 import Table from "@editorjs/table";
-
+import { success } from "zod";
+// uploadImageByUrl from previous block (or import it)
+const uploadImageByUrl = async (imageUrl) => {
+  try {
+    const res = await fetch("/api/editor-upload-by-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: imageUrl }),
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: 0, message: err?.message ?? "Upload by URL failed" };
+  }
+};
 const editorTools = {
   header: {
     class: Header,
@@ -30,9 +43,20 @@ const editorTools = {
   image: {
     class: ImageTool,
     config: {
+      uploader: {
+        /**
+         * uploadByFile should be the function that accepts a File object when user
+         * drags/drops or uses file selection. Your existing POST /api/editor-upload already supports form uploads.
+         * If you don't use a JS function for uploadByFile, Editor.js will POST file to endpoints.byFile automatically.
+         *
+         * Example if you want to handle uploadByFile manually:
+         * uploadByFile: async (file) => { ... call /api/editor-upload ... }
+         */
+        uploadByUrl: uploadImageByUrl,
+      },
       endpoints: {
         byFile: "/api/editor-upload",
-        byUrl: "/api/editor-upload-url",
+        // byUrl: "/api/editor-upload-url",
       },
       additionalFields: [
         {

@@ -13,7 +13,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -33,9 +32,9 @@ model Post {
   postSlug        String        @unique
   shortDesc       String?
   bannerImage     String
-  bannerAltText   String? 
-  metaTitle       String?       @db.VarChar(70) 
-  metaDescription String?       @db.VarChar(160) 
+  bannerAltText   String?
+  metaTitle       String?       @db.VarChar(70)
+  metaDescription String?       @db.VarChar(160)
   canonicalUrl    String?
   content         Json
   author          User?         @relation(fields: [authorId], references: [id])
@@ -54,15 +53,12 @@ model Comment {
   name      String
   email     String
   content   String
-  approved  Boolean?   
+  approved  Boolean?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   post      Post     @relation(fields: [postId], references: [id])
   postId    String
 }
-
-
-
 
 model BlogCategory {
   id        String   @id @default(uuid())

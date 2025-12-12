@@ -8,6 +8,7 @@ import { ArrowUpRight, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Spin } from "antd";
 import { generateBlogId } from "@/lib/utils";
+// import AddBlogEditorTwo from "./AddBlogEdittorTwo";
 
 const debounce = (fn, delay) => {
   let timer;
@@ -17,7 +18,9 @@ const debounce = (fn, delay) => {
   };
 };
 
-const AddBlogEditor = dynamic(() => import("./AddBlogEditor"), { ssr: false });
+const AddBlogEditor = dynamic(() => import("./AddBlogEditor"), {
+  ssr: false,
+});
 
 export default function AddBlog() {
   const { blogData, setBlogData } = useContext(BlogContext);
