@@ -18,6 +18,8 @@ const debounce = (fn, delay) => {
   };
 };
 
+const META_TITLE_MAX = 160;
+
 const AddBlogEditor = dynamic(() => import("./AddBlogEditor"), {
   ssr: false,
 });
@@ -119,13 +121,15 @@ export default function AddBlog() {
   };
 
   const handleMetaTitleChange = (e) => {
-    const value = e.target.value;
+    const value = e.target.value.slice(0, META_TITLE_MAX);
     setMetaTitle(value);
     setBlogData((prev) => ({ ...prev, metaTitle: value }));
   };
 
+  const META_DESC_MAX = 200;
+
   const handleMetaDescriptionChange = (e) => {
-    const value = e.target.value;
+    const value = e.target.value.slice(0, META_DESC_MAX);
     setMetaDescription(value);
     setBlogData((prev) => ({ ...prev, metaDescription: value }));
   };
@@ -168,57 +172,139 @@ export default function AddBlog() {
         className='hidden'
         onChange={handleFileChange}
       />
-      <input
-        type='text'
-        placeholder='banner alt text'
-        value={bannerAlt}
-        onChange={handleBannerAltChange}
-        className='text-xl pl-9 font-semibold w-full outline-none resize-none overflow-hidden !mb-3 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white border-b border-gray-300 dark:border-gray-700 pb-3 bg-transparent transition-colors duration-300 '
-      />
+      <div>
+        <label
+          htmlFor='bannerAlt'
+          className='block text-sm  text-gray-600 dark:text-gray-300 mb-2 font-semibold'
+        >
+          Banner Alt Text
+        </label>
+        <input
+          id='bannerAlt'
+          type='text'
+          placeholder='Enter banner alt text'
+          value={bannerAlt}
+          onChange={handleBannerAltChange}
+          className='text-sm pl-3 font-semibold w-full outline-none resize-none overflow-hidden !mb-3 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 p-3 bg-transparent transition-colors duration-300 rounded-lg'
+        />
+      </div>
 
-      <textarea
-        placeholder='Blog Title'
-        value={title}
-        onChange={handleTitleChange}
-        onInput={handleTitleResize}
-        className='text-3xl pl-9 font-semibold w-full outline-none resize-none overflow-hidden mb-6 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white border-b border-gray-300 dark:border-gray-700 pb-3 bg-transparent transition-colors duration-300'
-      />
+      <div>
+        <label
+          htmlFor='blogTitle'
+          className='block text-sm  text-gray-600 dark:text-gray-300 mb-2 font-semibold'
+        >
+          Blog Title
+        </label>
 
+        <textarea
+          id='blogTitle'
+          placeholder='Enter Blog Title'
+          value={title}
+          onChange={handleTitleChange}
+          onInput={handleTitleResize}
+          className='text-sm pl-3 font-semibold w-full outline-none resize-none overflow-hidden !mb-3 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 p-3 bg-transparent transition-colors duration-300 rounded-lg'
+        />
+      </div>
       {/* Editable Slug */}
-      <input
+      {/* <input
         type='text'
         placeholder='Post Slug (editable)'
         value={slug}
         onChange={handleSlugChange}
         className='text-xl pl-9 font-medium w-full outline-none resize-none overflow-hidden !mb-3 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-500 dark:text-white border-b border-gray-300 dark:border-gray-700 pb-3 bg-transparent transition-colors duration-300 pt-3'
-      />
+      /> */}
+      <div className='mb-4'>
+        <label className='block text-sm text-gray-600 dark:text-gray-300 mb-2 font-semibold'>
+          Post Slug
+        </label>
+        <input
+          type='text'
+          placeholder='Enter post slug'
+          value={slug}
+          onChange={handleSlugChange}
+          className='text-sm pl-3 font-semibold w-full outline-none resize-none overflow-hidden leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 p-3 bg-transparent transition-colors duration-300 rounded-lg'
+        />
+      </div>
 
       {/* SEO Meta Title */}
-      <input
+      {/* <input
         type='text'
         placeholder='Meta Title (SEO)'
         value={metaTitle}
+        maxLength={160}
         onChange={handleMetaTitleChange}
         className='text-xl pl-9 font-medium w-full outline-none resize-none overflow-hidden !mb-3 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-500 dark:text-white border-b border-gray-300 dark:border-gray-700 pb-3 bg-transparent transition-colors duration-300 pt-3'
-      />
+      /> */}
+      {/* <div className='text-sm text-gray-500 pl-9 mb-2 flex justify-end'>
+        {metaTitle.length}/160
+      </div> */}
+      <div className='mb-1'>
+        <label className='block text-sm text-gray-600 dark:text-gray-300 mb-2 font-semibold'>
+          Meta Title (SEO)
+        </label>
+        <input
+          type='text'
+          placeholder='Enter meta title'
+          value={metaTitle}
+          maxLength={160}
+          onChange={handleMetaTitleChange}
+          className='text-sm pl-3 font-semibold w-full outline-none resize-none overflow-hidden leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 p-3 bg-transparent transition-colors duration-300 rounded-lg'
+        />
+        <div className='text-xs text-gray-500 mt-1 flex justify-end'>
+          {metaTitle.length}/160
+        </div>
+      </div>
 
       {/* SEO Meta Description */}
-      <textarea
+      {/* <textarea
         placeholder='Meta Description (SEO)'
         value={metaDescription}
+        maxLength={200}
         onChange={handleMetaDescriptionChange}
         className='text-xl pl-9 font-medium w-full outline-none resize-none overflow-hidden !mb-3 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-500 dark:text-white border-b border-gray-300 dark:border-gray-700 pb-3 bg-transparent transition-colors duration-300 '
         rows={3}
       />
+      <div className='text-sm text-gray-500 pl-9 mb-2 flex justify-end'>
+        {metaDescription.length}/200
+      </div> */}
+      <div className='mb-1'>
+        <label className='block text-sm text-gray-600 dark:text-gray-300 mb-2 font-semibold'>
+          Meta Description (SEO)
+        </label>
+        <textarea
+          placeholder='Enter meta description'
+          value={metaDescription}
+          maxLength={200}
+          onChange={handleMetaDescriptionChange}
+          rows={3}
+          className='text-sm pl-3 font-semibold w-full outline-none resize-none overflow-hidden leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 p-3 bg-transparent transition-colors duration-300 rounded-lg'
+        />
+        <div className='text-xs text-gray-500 mt-1 flex justify-end'>
+          {metaDescription.length}/200
+        </div>
+      </div>
 
       {/* SEO Canonical Url */}
-      <input
+      {/* <input
         type='text'
         placeholder='Canonical Url (SEO)'
         value={canonicalUrl}
         onChange={handleCanonicalUrlChange}
         className='text-xl pl-9 font-medium w-full outline-none resize-none overflow-hidden !mb-3 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-500 dark:text-white border-b border-gray-300 dark:border-gray-700 pb-3 bg-transparent transition-colors duration-300 pt-3'
-      />
+      /> */}
+      <div className='mb-4'>
+        <label className='block text-sm text-gray-600 dark:text-gray-300 mb-2 font-semibold'>
+          Canonical URL
+        </label>
+        <input
+          type='text'
+          placeholder='Enter canonical URL'
+          value={canonicalUrl}
+          onChange={handleCanonicalUrlChange}
+          className='text-sm pl-3 font-semibold w-full outline-none resize-none overflow-hidden leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 p-3 bg-transparent transition-colors duration-300 rounded-lg'
+        />
+      </div>
 
       <AddBlogEditor preview={preview} />
 
