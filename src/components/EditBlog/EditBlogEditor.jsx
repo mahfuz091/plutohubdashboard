@@ -46,7 +46,7 @@ export default function AddBlogEditor({ preview }) {
   return (
     <div
       id='editorjs'
-      className='prose lg:prose-xl mt-6 text-gray-800 border-b border-gray-300 placeholder:text-black !pb-4 '
+      className='prose lg:prose-xl mt-6 text-gray-800 border-b border-gray-300 placeholder:text-black !pb-4 w-full!'
     />
   );
 }

@@ -26,7 +26,6 @@ export function LoginForm({ className, ...props }) {
     loginUser,
     initialState
   );
-  console.log(state, "state");
 
   useEffect(() => {
     if (!state.msg) return;

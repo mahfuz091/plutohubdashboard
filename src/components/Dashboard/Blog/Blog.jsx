@@ -1,19 +1,31 @@
 "use client";
 
-import React from "react";
+import React, { useTransition } from "react";
 import { Table, Space, Dropdown, Popconfirm } from "antd";
 import {
   HeartOutlined,
   MessageOutlined,
-  MoreOutlined,
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { toast } from "sonner";
-import { deletePost } from "@/app/actions/blog/blog.actions";
+import { deletePost, updatePostStatus } from "@/app/actions/blog/blog.actions";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { USER_ROLES } from "@/lib/access";
+import { ChevronDown } from "lucide-react";
+import Image from "next/image";
+
+const STATUS_OPTIONS = [
+  { label: "Draft", value: "DRAFT" },
+  { label: "Pending", value: "PENDING" },
+  { label: "Publish", value: "PUBLISH" },
+  { label: "Decline", value: "DECLINE" },
+];
 
 const blogData = [
   {
@@ -88,6 +100,11 @@ const blogData = [
 ];
 
 const BlogTable = ({ allPost }) => {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === USER_ROLES.ADMIN;
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
   const handleDelete = async (id) => {
     try {
       const res = await deletePost(id);
@@ -101,11 +118,40 @@ const BlogTable = ({ allPost }) => {
       toast.error("Something went wrong while deleting the post");
     }
   };
+
+  const handleStatusChange = (record, newStatus) => {
+    if (newStatus === record.status) return;
+    const proceed = async () => {
+      let note = null;
+      if (newStatus === "DECLINE") {
+        note = window.prompt("Provide decline instructions for the author");
+        if (!note) {
+          toast.error("Decline note is required");
+          return;
+        }
+      }
+      startTransition(async () => {
+        const result = await updatePostStatus({
+          postId: record.id,
+          status: newStatus,
+          note,
+        });
+        if (result.success) {
+          toast.success(result.msg);
+          router.refresh();
+        } else {
+          toast.error(result.msg);
+        }
+      });
+    };
+
+    proceed();
+  };
   const getMenuItems = (record) => [
     {
       key: "edit",
       label: (
-        <Link href={`/dashboard/edit-blog/${record.id}`}>
+        <Link href={`/dashboard/blog/edit/${record.id}`}>
           <EditOutlined className='mr-2 text-blue-600' />
           Edit
         </Link>
@@ -143,12 +189,26 @@ const BlogTable = ({ allPost }) => {
       title: "Author",
       dataIndex: "author",
       key: "author",
-      render: (author) => (
+      render: (author, record) => (
         <Space>
-          <Avatar className='h-8 w-8 rounded-lg'>
-            <AvatarImage src={author?.profileImage} alt='' />
-          </Avatar>
-          <span>{author.name}</span>
+        <span className='h-8 w-8 overflow-hidden rounded-lg bg-slate-100'>
+          <Image
+            src={
+              record?.bannerImage &&
+              record.bannerImage !== "undefined" &&
+              record.bannerImage.trim() !== ""
+                ? record.bannerImage
+                : "/banner.png"
+            }
+            alt={record.title || "Blog banner"}
+            width={40}
+            height={40}
+            className='h-8 w-8 object-cover'
+            unoptimized
+          />
+        </span>
+          <span>{author?.name || "Unknown"}</span>
+         
         </Space>
       ),
     },
@@ -158,7 +218,6 @@ const BlogTable = ({ allPost }) => {
       key: "title",
       render: (title) => <span className='font-medium'>{title}</span>,
     },
-
     {
       title: "Date",
       dataIndex: "createdAt",
@@ -181,6 +240,65 @@ const BlogTable = ({ allPost }) => {
           </span>
         </Space>
       ),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status, record) => {
+        const label = status || "PENDING";
+        const tone =
+          label === "PUBLISH"
+            ? "text-emerald-600 border-emerald-200 bg-emerald-50"
+            : label === "DECLINE"
+              ? "text-red-600 border-red-200 bg-red-50"
+              : "text-amber-600 border-amber-200 bg-amber-50";
+
+        if (isAdmin) {
+          const items = STATUS_OPTIONS.map((option) => ({
+            key: option.value,
+            label: (
+              <span className='flex items-center justify-between'>
+                <span>{option.label}</span>
+                {option.value === label && (
+                  <span className='text-[11px] font-semibold text-slate-400'>
+                    current
+                  </span>
+                )}
+              </span>
+            ),
+            onClick: () => handleStatusChange(record, option.value),
+          }));
+
+          return (
+            <Dropdown
+              menu={{ items }}
+              trigger={["click"]}
+              placement='bottomRight'
+            >
+              <span
+                className={`flex cursor-pointer items-center justify-between rounded-full border px-3 py-1 text-xs font-semibold ${tone}`}
+              >
+                <span className='flex items-center gap-1'>
+                  {label}
+                  <ChevronDown className='h-3 w-3 text-current' />
+                </span>
+                <span className='text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500'>
+                  change
+                </span>
+              </span>
+            </Dropdown>
+          );
+        }
+
+        return (
+          <span
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${tone}`}
+          >
+            {label}
+          </span>
+        );
+      },
     },
     {
       title: "Actions",

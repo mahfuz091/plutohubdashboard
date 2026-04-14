@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { USER_ROLES } from "@/lib/access";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.AUTH_SECRET,
@@ -25,12 +26,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           user.password
         );
         if (!isValid) return null;
+        if (user.role !== USER_ROLES.ADMIN && !user.approved) return null;
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           profileImage: user.profileImage,
+          role: user.role,
+          approved: user.approved,
         };
       },
     }),
@@ -44,6 +48,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.profileImage = user.profileImage;
+        token.role = user.role;
+        token.approved = user.approved;
       }
       return token;
     },
@@ -51,6 +57,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.id = token.id;
         session.user.profileImage = token.profileImage;
+        session.user.role = token.role;
+        session.user.approved = token.approved;
       }
       return session;
     },

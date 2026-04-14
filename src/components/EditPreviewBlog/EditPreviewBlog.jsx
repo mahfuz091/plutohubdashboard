@@ -2,31 +2,24 @@
 
 import { startTransition, useContext } from "react";
 import { BlogContext } from "@/context/BlogContext";
-import { ArrowLeft, ArrowUpRight, CircleCheckBig } from "lucide-react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import { Button } from "../ui/button";
-import { postCreate, postUpdate } from "@/app/actions/blog/blog.actions";
+import { Button } from "@/components/ui/button";
+import { postUpdate } from "@/app/actions/blog/blog.actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 const EditSeeBlog = ({ userId }) => {
   const router = useRouter();
   const { blogData, setBlogData } = useContext(BlogContext);
-  console.log("blogData:", blogData);
 
-  if (!blogData) return <p>No blog data available</p>;
-
-  const renderItem = (item) => {
-    if (typeof item === "string") return item;
-
-    if (typeof item === "object") {
-      if ("content" in item) return item.content;
-      if ("text" in item) return item.text;
-      return JSON.stringify(item);
-    }
-
-    return String(item);
-  };
+  if (!blogData) {
+    return (
+      <div className='min-h-screen flex items-center justify-center text-slate-500'>
+        No draft available yet.
+      </div>
+    );
+  }
 
   const renderBlock = (block, index) => {
     if (!block?.type || !block?.data) return null;
@@ -35,142 +28,39 @@ const EditSeeBlog = ({ userId }) => {
       case "header": {
         const HeaderTag = `h${block.data.level || 2}`;
         return (
-          <HeaderTag key={index} className='my-4 font-bold text-black'>
+          <HeaderTag key={index} className='mb-4 text-2xl font-semibold text-slate-900'>
             {block.data.text}
           </HeaderTag>
         );
       }
-
       case "paragraph":
         return (
-          <p key={index} className='my-2 text-gray-800 leading-relaxed'>
+          <p key={index} className='mb-3 text-base leading-relaxed text-slate-700'>
             {block.data.text}
           </p>
         );
-
-      case "list": {
-        const items = block.data?.items || [];
-
-        if (block.data.style === "ordered") {
-          return (
-            <ol key={index} className='list-decimal my-2'>
-              {items.map((item, i) => (
-                <li key={i}>{renderItem(item)}</li>
-              ))}
-            </ol>
-          );
-        } else if (block.data.style === "checklist") {
-          return (
-            <ul key={index} className='my-2'>
-              {items.map((item, i) => (
-                <li key={i} className='flex items-center gap-2'>
-                  <input
-                    type='checkbox'
-                    checked={item?.meta?.checked ?? false}
-                    readOnly
-                    className='w-4 h-4'
-                  />
-                  <span>{renderItem(item)}</span>
-                </li>
-              ))}
-            </ul>
-          );
-        } else {
-          return (
-            <ul key={index} className='my-2'>
-              {items.map((item, i) => (
-                <li key={i} className='flex mt-4 gap-2'>
-                  <CircleCheckBig /> {renderItem(item)}
-                </li>
-              ))}
-            </ul>
-          );
-        }
-      }
-
       case "image":
         return block.data?.file?.url ? (
-          <div key={index} className='my-4'>
-            <img
-              src={block.data.file.url}
-              alt={block.data.caption || "Blog Image"}
-              className='w-full rounded-md object-cover'
-            />
+          <div key={index} className='my-4 rounded-3xl border border-slate-200 bg-slate-100 p-2'>
+            <img src={block.data.file.url} alt={block.data.caption || "Blog"} className='h-52 w-full object-cover' />
             {block.data.caption && (
-              <p className='text-sm text-white mt-2'>{block.data.caption}</p>
+              <p className='mt-2 text-xs text-slate-500'>{block.data.caption}</p>
             )}
           </div>
         ) : null;
-
       case "quote":
         return (
-          <blockquote
-            key={index}
-            className='border-l-4 border-gray-300 pl-4 italic my-4'
-          >
-            {block.data.text}
+          <blockquote key={index} className='my-4 rounded-2xl border border-slate-200 bg-white p-5 text-slate-800'>
+            <p>{block.data.text}</p>
             {block.data.caption && (
-              <cite className='block mt-1'>— {block.data.caption}</cite>
+              <cite className='mt-3 block text-sm text-slate-500'>— {block.data.caption}</cite>
             )}
           </blockquote>
         );
-
-      case "code":
-        return (
-          <pre
-            key={index}
-            className='bg-gray-100 rounded p-3 overflow-x-auto my-4 font-mono text-sm'
-          >
-            {block.data.code}
-          </pre>
-        );
-
-      case "table":
-        return (
-          <div key={index} className='overflow-x-auto my-4'>
-            <table className='table-auto border-collapse border border-gray-300 w-full'>
-              <tbody>
-                {block.data?.content?.map((row, rIdx) => (
-                  <tr key={rIdx}>
-                    {row.map((cell, cIdx) => (
-                      <td key={cIdx} className='border border-gray-300 p-2'>
-                        {cell}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
-
       default:
         return null;
     }
   };
-
-  // const handlePublish = (e) => {
-  //   e.preventDefault();
-
-  //   const formData = {
-  //     title: blogData.title,
-  //     shortDesc: blogData.shortDesc,
-  //     image: blogData.image,
-  //     content: JSON.stringify(blogData.content),
-  //     blogCategoryId: blogData.categoryId,
-  //     authorId: userId,
-  //   };
-
-  //   console.log("Publishing blog data:", formData);
-
-  //   setBlogData({
-  //     title: "",
-  //     shortDesc: "",
-  //     content: null,
-  //     image: "/banner.png",
-  //     categories: [],
-  //   });
-  // };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -179,30 +69,29 @@ const EditSeeBlog = ({ userId }) => {
     formData.append("id", blogData.id);
     formData.append("title", blogData.title);
     formData.append("shortDesc", blogData.shortDesc);
-    formData.append("bannerImage", blogData.image);
+    const bannerValue =
+      blogData.image || blogData.bannerImage || blogData.bannerImageUrl;
+    if (bannerValue) {
+      formData.append("bannerImage", bannerValue);
+    }
     formData.append("authorId", userId);
     formData.append("blogCategoryId", blogData.categoryId);
-
-    // Append content blocks as JSON string
     formData.append("content", JSON.stringify(blogData.content));
 
     startTransition(async () => {
       try {
         const response = await postUpdate(null, formData);
-        console.log("response:", response);
-
         if (response?.success) {
-          toast.success(response.msg);
-          router.push("/dashboard");
+          toast.success("Draft updated");
+          router.push("/dashboard/blog");
           setBlogData({
             title: "",
-            shortDesc: "",
             content: null,
             image: "/banner.png",
             categories: [],
           });
         } else {
-          toast.error(response?.msg || "Failed to publish blog");
+          toast.error(response?.msg || "Update failed");
         }
       } catch (err) {
         console.error("publish error:", err);
@@ -210,67 +99,71 @@ const EditSeeBlog = ({ userId }) => {
       }
     });
   };
+
   return (
-    <form
-      onSubmit={handleUpdate}
-      className='bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-md transition-colors duration-300'
-    >
-      <input type='hidden' name='title' value={blogData.title} />
-      <input type='hidden' name='shortDesc' value={blogData.shortDesc} />
-      <input type='hidden' name='image' value={blogData.image} />
-      <input
-        type='hidden'
-        name='content'
-        value={JSON.stringify(blogData.content)}
-      />
-      {blogData.categories?.map((cat, i) => (
-        <input key={i} type='hidden' name='categories' value={cat?.id} />
-      ))}
+    <section className='min-h-screen pb-10'>
+      <div className='mx-auto max-w-6xl space-y-8 px-4 sm:px-6 lg:px-0'>
+        <header className='rounded-[16px] border border-slate-200 bg-white p-6 shadow-[0_25px_80px_rgba(15,23,42,0.08)] sticky top-8 z-10'>
+          <div className='flex flex-col gap-4   lg:justify-between'>
+                 <div className='flex gap-2'>
+              <Link href={`/dashboard/blog/edit/${blogData?.id}`}>
+                <Button variant='outline' >
+                  <ArrowLeft className='h-4 w-4' /> Back to edit
+                </Button>
+              </Link>
+              <Button onClick={handleUpdate}>
+                Update draft <ArrowUpRight className='h-4 w-4' />
+              </Button>
+            </div>
+            <div>
+              <p className='text-xs font-semibold uppercase tracking-[0.4em] text-slate-400'>
+                Edit preview
+              </p>
+              <h1 className='mt-2 text-4xl font-semibold text-slate-900'>
+                Review before publish
+              </h1>
+            </div>
+       
+          </div>
+        </header>
 
-      <div className='flex justify-between items-center mb-6'>
-        <h3 className='text-xl font-bold'>Preview</h3>
-        <Link href='/dashboard/add-blog'>
-          <Button type='button' className='w-full'>
-            <ArrowLeft /> Back to Edit
-          </Button>
-        </Link>
-      </div>
-
-      {blogData.bannerImage && (
-        <img
-          src={blogData.bannerImage}
-          alt={blogData.title}
-          className='w-full h-[400px] object-cover mb-6 border border-white/10 rounded-lg'
-        />
-      )}
-
-      {blogData.categories?.length > 0 && (
-        <div className='flex flex-wrap gap-2 mb-4'>
-          {blogData.categories.map((cat, i) => (
-            <span key={i} className='blog-card-category'>
-              {cat.name}
+        <div className='flex flex-col gap-4'>
+          <div className='flex items-center justify-between rounded-[16px] border border-slate-200 bg-white/80 px-6 py-4 shadow-sm'>
+            <div>
+              <p className='text-xs uppercase tracking-[0.4em] text-slate-400'>Status</p>
+              <p className='text-lg font-semibold text-slate-900'>{blogData.status || "Pending"}</p>
+            </div>
+            <span className='rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-700'>
+              {blogData.status === "DECLINE" ? "Needs tweaks" : "Draft mode"}
             </span>
-          ))}
+          </div>
+          <div className='relative h-[320px] overflow-hidden rounded-[16px] border border-slate-200 bg-slate-100'>
+            <img
+              src={blogData.bannerImage || "/banner.png"}
+              alt={blogData.title}
+              className='h-full w-full object-cover'
+            />
+            <div className='absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/30 to-transparent' />
+            <div className='absolute inset-0 flex flex-col justify-end p-6 text-white'>
+              <span className='self-start rounded-full border border-white/40 bg-white/20 px-3 py-1 text-xs uppercase tracking-[0.3em]'>
+                Edit preview
+              </span>
+              <h2 className='text-4xl font-semibold'>{blogData.title}</h2>
+            </div>
+          </div>
         </div>
-      )}
-
-      <h1 className='text-3xl font-bold mb-6'>{blogData.title}</h1>
-
-      {blogData.shortDesc && (
-        <p className='text-gray-800 mb-4'>{blogData.shortDesc}</p>
-      )}
-
-      {blogData.content?.blocks?.map((block, index) =>
-        renderBlock(block, index)
-      )}
-
-      <div className='mt-6 flex justify-end'>
-        <Button type='submit' className='w-full'>
-          Publish Now
-          <ArrowUpRight />
-        </Button>
+        <div className='grid gap-6 lg:grid-cols-1'>
+          <article className='rounded-[16px] border border-slate-200 bg-white p-6 shadow-sm'>
+            <div className='space-y-6'>
+              {blogData.content?.blocks?.map((block, index) =>
+                renderBlock(block, index)
+              )}
+            </div>
+          </article>
+       
+        </div>
       </div>
-    </form>
+    </section>
   );
 };
 

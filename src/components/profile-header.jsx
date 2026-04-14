@@ -1,23 +1,23 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Calendar, Mail, MapPin } from "lucide-react";
+import { Camera, Sparkles } from "lucide-react";
 import { startTransition, useRef, useState } from "react";
 import { updateUserProfileImage } from "@/app/actions/user/user.actions";
+import { useRouter } from "next/navigation";
 
 export default function ProfileHeader({ user }) {
   const fileInputRef = useRef();
-  const [preview, setPreview] = useState(user?.profileImage);
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
+  const router = useRouter();
+  const [preview, setPreview] = useState(user?.profileImage || "/banner.png");
+
+  const handleUpload = async (event) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
     const tempPreview = URL.createObjectURL(file);
-    // setPreview(tempPreview);
-
-    // setUploading(true);
     try {
       const formData = new FormData();
       formData.append("image", file);
@@ -26,74 +26,72 @@ export default function ProfileHeader({ user }) {
         method: "POST",
         body: formData,
       });
-      if (!res.ok) throw new Error("Upload failed");
 
+      if (!res.ok) throw new Error("Upload failed");
       const data = await res.json();
       const finalUrl = data.url || tempPreview;
-      setPreview(finalUrl);
-      // Use your action function to update the database
 
-      // React startTransition for smooth state update
-      startTransition(async () => {
-        await updateUserProfileImage(null, {
-          userId: user.id,
-          imageUrl: finalUrl,
-        });
-        setPreview(finalUrl);
+      await updateUserProfileImage(null, {
+        userId: user.id,
+        imageUrl: finalUrl,
       });
+      setPreview(finalUrl);
+      router.refresh();
     } catch (err) {
       console.error(err);
       alert("Upload failed");
-    } finally {
-      // setUploading(false);
     }
   };
+
   return (
-    <Card>
-      <CardContent className='p-6'>
-        <div className='flex flex-col items-start gap-6 md:flex-row md:items-center'>
+    <Card className='overflow-hidden rounded-[36px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,#f4fdf9,transparent_55%),linear-gradient(180deg,#ffffff,rgba(255,255,255,0.8))] shadow-[0_25px_70px_rgba(15,23,42,0.08)]'>
+      <CardContent className='relative overflow-hidden px-6 py-8 sm:px-8'>
+        <div className='pointer-events-none absolute -right-16 top-4 h-40 w-40 rounded-full bg-emerald-100/60 blur-3xl' />
+        <div className='pointer-events-none absolute left-8 top-0 h-28 w-28 rounded-full bg-sky-100/70 blur-2xl' />
+        <div className='relative flex flex-col gap-6 lg:flex-row lg:items-center'>
           <div className='relative'>
-            <Avatar className='h-24 w-24'>
-              <AvatarImage src={preview} alt='Profile' />
-              <AvatarFallback className='text-2xl'>JD</AvatarFallback>
+            <Avatar className='h-24 w-24 rounded-full object-cover shadow-xl'>
+              <AvatarImage src={preview} alt={user?.name || "Avatar"} />
+              <AvatarFallback className='text-2xl uppercase'>
+                {user?.name?.charAt(0) || "U"}
+              </AvatarFallback>
             </Avatar>
             <Button
-              size='icon'
               variant='outline'
-              className='absolute -right-2 -bottom-2 h-8 w-8 rounded-full'
-              onClick={() => fileInputRef.current?.click()} // trigger input
+              size='icon'
+              className='absolute -right-2 -bottom-2 rounded-full border border-white bg-white text-slate-900 shadow-lg'
+              onClick={() => fileInputRef.current?.click()}
             >
-              <Camera />
+              <Camera className='h-4 w-4' />
             </Button>
             <input
               type='file'
               ref={fileInputRef}
               className='hidden'
-              onChange={handleFileChange}
+              onChange={handleUpload}
             />
           </div>
-          <div className='flex-1 space-y-2'>
-            <div className='flex flex-col gap-2 md:flex-row md:items-center'>
-              <h1 className='text-2xl font-bold'>{user.name}</h1>
-              {/* <Badge variant='secondary'>Pro Member</Badge> */}
+          <div className='flex-1 space-y-2 text-slate-900'>
+            <div className='flex items-center gap-3'>
+              <Sparkles className='h-5 w-5 text-emerald-500' />
+              <p className='text-xs font-semibold uppercase tracking-[0.3em] text-emerald-600'>
+                Your profile
+              </p>
             </div>
-            {/* <p className='text-muted-foreground'>Senior Product Designer</p> */}
-            <div className='text-muted-foreground flex flex-wrap gap-4 text-sm'>
-              <div className='flex items-center gap-1'>
-                <Mail className='size-4' />
-                {user.email}
-              </div>
-              <div className='flex items-center gap-1 hidden'>
-                <MapPin className='size-4' />
-                San Francisco, CA
-              </div>
-              <div className='flex items-center gap-1 hidden'>
-                <Calendar className='size-4' />
-                Joined March 2023
-              </div>
+            <h1 className='text-3xl font-semibold'>{user?.name || "User"}</h1>
+            <p className='text-sm text-slate-500'>{user?.jobTitle || "Creator"}</p>
+            <div className='flex flex-wrap gap-4 text-sm text-slate-500'>
+              <span className='flex items-center gap-1'>
+                <span className='font-semibold text-slate-900'>{user?.email}</span>
+              </span>
+              <span>{user?.location || "Location not set"}</span>
             </div>
           </div>
-          <Button variant='default'>Edit Profile</Button>
+          <div>
+            <Button variant='ghost' size='lg'>
+              View account
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

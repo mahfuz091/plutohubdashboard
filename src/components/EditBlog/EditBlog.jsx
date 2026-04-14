@@ -89,7 +89,7 @@ export default function EditBlog() {
   const handleSlugChange = (e) => {
     const value = e.target.value;
     setSlug(value);
-    setSlugEdited(true); // mark as manually edited
+    setSlugEdited(true);
     setBlogData((prev) => ({ ...prev, postSlug: value }));
   };
   const handleBannerAltChange = (e) => {
@@ -118,130 +118,127 @@ export default function EditBlog() {
     setBlogData((prev) => ({ ...prev, canonicalUrl: value }));
   };
 
-  console.log(blogData, "blogData add");
-
   return (
-    <div className='bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-md transition-colors duration-300'>
-      <h1 className='text-2xl font-bold mb-6 text-gray-900 dark:text-white'>
-        New Blog
-      </h1>
-
-      <div
-        className='mb-6 cursor-pointer w-full h-[400px] border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden relative hover:ring-2 hover:ring-indigo-500 transition-all duration-300'
-        onClick={() => fileInputRef.current.click()}
-      >
-        <img
-          src={preview}
-          alt='Blog Banner'
-          className='w-full h-full object-cover'
-        />
-        {uploading && (
-          <div className='absolute inset-0 flex items-center justify-center bg-black/40'>
-            <Spin size='large' />
+    <div className='bg-white border border-slate-200 rounded-[16px] shadow-sm'>
+      <div className='space-y-6 p-6 md:p-8'>
+        <div
+          className='relative cursor-pointer overflow-hidden rounded-[16px] border border-dashed border-slate-200 bg-slate-50 hover:border-emerald-300'
+          style={{ minHeight: 260 }}
+          onClick={() => fileInputRef.current.click()}
+        >
+          <img
+            src={preview}
+            alt='Blog Banner'
+            className='h-full w-full object-cover transition duration-500'
+          />
+          {uploading && (
+            <div className='absolute inset-0 flex items-center justify-center bg-slate-900/60'>
+              <Spin size='large' />
+            </div>
+          )}
+          <div className='pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-slate-900/80 to-transparent px-5 py-4 text-xs uppercase tracking-[0.2em] text-white'>
+            <span>Change banner</span>
+            <span>Drag or paste image</span>
           </div>
-        )}
-      </div>
+        </div>
 
-      <input
-        type='file'
-        ref={fileInputRef}
-        className='hidden'
-        onChange={handleFileChange}
-      />
-
-      <textarea
-        placeholder='Blog Title'
-        value={title}
-        onChange={handleTitleChange}
-        onInput={handleTitleResize}
-        className='text-3xl pl-9 font-semibold w-full outline-none resize-none overflow-hidden mb-6 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white border-b border-gray-300 dark:border-gray-700 pb-3 bg-transparent transition-colors duration-300'
-      />
-
-      {/* Editable Slug */}
-      <div>
-        <label htmlFor='slug' className='pl-9 text-sm font-semibold pb-2'>
-          Post Slug (editable)
-        </label>
         <input
-          id='slug'
-          type='text'
-          placeholder='Post Slug (editable)'
-          value={slug}
-          onChange={handleSlugChange}
-          className='text-xl pl-9 font-medium w-full outline-none resize-none overflow-hidden !mb-3 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-500 dark:text-white border-b border-gray-300 dark:border-gray-700 pb-3 bg-transparent transition-colors duration-300 pt-3'
+          type='file'
+          ref={fileInputRef}
+          className='hidden'
+          onChange={handleFileChange}
         />
-      </div>
 
-      {/* SEO Meta Title */}
-      <div>
-        <label htmlFor='metaTitle' className='pl-9 text-sm font-semibold pb-2'>
-          Meta Title (SEO)
-        </label>
-        <input
-          id='metaTitle'
-          type='text'
-          placeholder='Meta Title (SEO)'
-          value={metaTitle}
-          onChange={handleMetaTitleChange}
-          className='text-xl pl-9 font-medium w-full outline-none resize-none overflow-hidden !mb-3 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-500 dark:text-white border-b border-gray-300 dark:border-gray-700 pb-3 bg-transparent transition-colors duration-300 pt-3'
-        />
-      </div>
+        <div className='space-y-4'>
+          <label className='text-sm font-semibold text-slate-500'>Alt text</label>
+          <input
+            id='bannerAlt'
+            type='text'
+            placeholder='Describe the image for accessibility'
+            value={bannerAlt}
+            onChange={handleBannerAltChange}
+            className='w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-emerald-500 focus:ring-emerald-100'
+          />
+        </div>
 
-      {/* SEO Meta Description */}
-      <div>
-        <label
-          htmlFor='metaDescription'
-          className='pl-9 text-sm font-semibold pb-2'
-        >
-          Meta Description (SEO)
-        </label>
-        <textarea
-          id='metaDescription'
-          placeholder='Meta Description (SEO)'
-          value={metaDescription}
-          onChange={handleMetaDescriptionChange}
-          className='text-xl pl-9 font-medium w-full outline-none resize-none overflow-hidden !mb-3 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-500 dark:text-white border-b border-gray-300 dark:border-gray-700 pb-3 bg-transparent transition-colors duration-300 '
-          rows={3}
-        />
-      </div>
+        <div className='space-y-4'>
+          <label className='text-sm font-semibold text-slate-500'>Blog title</label>
+          <textarea
+            id='blogTitle'
+            placeholder='Write your blog title'
+            value={title}
+            onChange={handleTitleChange}
+            onInput={handleTitleResize}
+            className='w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-3xl font-semibold text-slate-900 outline-none focus:border-emerald-500 focus:ring-emerald-100'
+            rows={2}
+          />
+        </div>
 
-      {/* SEO Canonical Url */}
-      <div>
-        <label
-          htmlFor='canonicalUrl'
-          className='pl-9 text-sm font-semibold pb-2'
-        >
-          Canonical Url (SEO)
-        </label>
-        <input
-          type='text'
-          placeholder='Canonical Url (SEO)'
-          value={canonicalUrl}
-          onChange={handleCanonicalUrlChange}
-          className='text-xl pl-9 font-medium w-full outline-none resize-none overflow-hidden !mb-3 leading-snug placeholder-gray-500 dark:placeholder-gray-400 text-gray-500 dark:text-white border-b border-gray-300 dark:border-gray-700 pb-3 bg-transparent transition-colors duration-300 pt-3'
-        />
-      </div>
+        <div className='grid gap-4 md:grid-cols-2'>
+          <div className='space-y-2'>
+            <label className='text-sm font-semibold text-slate-500'>Post slug</label>
+            <input
+              type='text'
+              placeholder='post-slug-example'
+              value={slug}
+              onChange={handleSlugChange}
+              className='w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-emerald-500 focus:ring-emerald-100'
+            />
+          </div>
 
-      <EditBlogEditor preview={preview} />
+          <div className='space-y-2'>
+            <label className='text-sm font-semibold text-slate-500'>
+              Canonical URL
+            </label>
+            <input
+              type='text'
+              placeholder='https://example.com/blog/article'
+              value={canonicalUrl}
+              onChange={handleCanonicalUrlChange}
+              className='w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-emerald-500 focus:ring-emerald-100'
+            />
+          </div>
+        </div>
 
-      <div className='mt-6 flex justify-end'>
-        <Link href='/dashboard/edit-preview-blog'>
-          <Button
-            type='submit'
-            className='w-full !text-white !cursor-pointer'
-            disabled={uploading}
-          >
-            {uploading ? (
-              <span className='flex items-center justify-center gap-2'>
-                <Loader2 className='h-5 w-5 animate-spin' />
+        <div className='grid gap-4 md:grid-cols-2'>
+          <div className='space-y-2'>
+            <label className='text-sm font-semibold text-slate-500'>Meta title</label>
+            <input
+              type='text'
+              placeholder='SEO meta title'
+              value={metaTitle}
+              onChange={handleMetaTitleChange}
+              className='w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-emerald-500 focus:ring-emerald-100'
+            />
+          </div>
+          <div className='space-y-2'>
+            <label className='text-sm font-semibold text-slate-500'>
+              Meta description
+            </label>
+            <textarea
+              placeholder='Meta description'
+              value={metaDescription}
+              onChange={handleMetaDescriptionChange}
+              rows={3}
+              className='w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none focus:border-emerald-500 focus:ring-emerald-100'
+            />
+          </div>
+        </div>
+
+        <div className='rounded-[16px] border border-slate-200 bg-slate-50 p-4'>
+          <EditBlogEditor preview={preview} />
+        </div>
+
+        <div className='flex justify-end'>
+          <Link href='/dashboard/blog/edit-preview'>
+            <Button variant='default'>
+              <span className='flex items-center gap-2'>
+                <ArrowUpRight className='h-4 w-4' />
+                Preview changes
               </span>
-            ) : (
-              <span className='flex gap-3 items-center '>
-                See Preview <ArrowUpRight />
-              </span>
-            )}
-          </Button>
-        </Link>
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );

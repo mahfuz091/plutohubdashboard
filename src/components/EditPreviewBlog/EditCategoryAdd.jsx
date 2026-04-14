@@ -63,7 +63,7 @@ const EditCategoryAdd = () => {
 
   return (
     <div>
-      <div className='bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-md transition-colors duration-300'>
+      <div className='bg-white shadow-[0_25px_80px_rgba(15,23,42,0.08)] dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-md transition-colors duration-300'>
         <p className='text-gray-800 mb-2 text-lg'>Select Categories</p>
 
         {loading ? (

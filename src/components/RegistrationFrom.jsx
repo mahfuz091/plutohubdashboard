@@ -31,9 +31,8 @@ export function RegisterForm({ className, ...props }) {
     if (!state.msg) return;
 
     if (state.success) {
-      toast.success("Account created successfully!");
-
-      router.push("/dashboard");
+      toast.success(state.msg);
+      router.push(state.redirectTo || "/");
     } else {
       toast.error(state.msg || "Something went wrong!");
     }

@@ -4,10 +4,11 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { redirect } from "next/navigation";
+import { canAccessDashboard } from "@/lib/access";
 
 export default async function Page({ children }) {
   const session = await auth();
-  if (!session) {
+  if (!session || !canAccessDashboard(session.user)) {
     redirect("/");
   }
 

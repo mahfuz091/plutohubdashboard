@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BlogProvider } from "@/context/BlogContext";
 import { Toaster } from "sonner";
+import { SessionProvider } from "next-auth/react";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -23,10 +24,12 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden `}
       >
-        <BlogProvider>
-          {children}
-          <Toaster richColors position='bottom-right' />
-        </BlogProvider>
+        <SessionProvider>{/* ensure auth hooks have session */} 
+          <BlogProvider>
+            {children}
+            <Toaster richColors position='bottom-right' />
+          </BlogProvider>
+        </SessionProvider>
       </body>
     </html>
   );

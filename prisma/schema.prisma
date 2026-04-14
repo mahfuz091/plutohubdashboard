@@ -15,12 +15,19 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  ADMIN
+  AUTHOR
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
   name         String?
   profileImage String?
   password     String
+  role         UserRole @default(AUTHOR)
+  approved     Boolean  @default(false)
   posts        Post[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -39,6 +46,8 @@ model Post {
   content         Json
   author          User?         @relation(fields: [authorId], references: [id])
   authorId        String?
+  status          PostStatus    @default(PENDING)
+  declineNote     String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   BlogCategory    BlogCategory? @relation(fields: [blogCategoryId], references: [id])
@@ -46,6 +55,14 @@ model Post {
   Comment         Comment[]
 
   @@index([authorId], name: "author_idx")
+}
+
+
+enum PostStatus {
+  DRAFT
+  PENDING
+  PUBLISH
+  DECLINE
 }
 
 model Comment {

@@ -2,99 +2,51 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { generateBlogId } from "@/lib/utils";
+import { canAccessDashboard, isAdmin } from "@/lib/access";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
-/** ---------- Helpers ---------- */
 function getString(v) {
   return typeof v === "string" ? v.trim() : "";
 }
 
-/**
- * Accepts `content` as:
- * 1) multiple inputs with the same name: formData.getAll("content")
- * 2) a single JSON string: '["para1","para2"]'
- * 3) a single newline-separated string
- */
-function parseContent(formData) {
-  const all = formData.getAll("content");
-  if (all.length > 1) {
-    return all
-      .map((v) => (typeof v === "string" ? v : ""))
-      .map((s) => s.trim())
-      .filter(Boolean);
+async function requireDashboardUser() {
+  const session = await auth();
+
+  if (!session?.user?.id || !canAccessDashboard(session.user)) {
+    return null;
   }
-  const single = getString(formData.get("content"));
-  if (!single) return [];
-  try {
-    const parsed = JSON.parse(single);
-    if (Array.isArray(parsed)) {
-      return parsed.map((x) => String(x).trim()).filter(Boolean);
-    }
-  } catch {
-    // not JSON — fall through
-  }
-  // newline-separated fallback
-  return single
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+
+  return session;
 }
 
-/** ---------- List Posts ---------- */
+async function canAccessPost(session, postId) {
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { id: true, authorId: true },
+  });
 
-// export const postList = async () => {
-//   try {
-//     const posts = await prisma.post.findMany({
-//       orderBy: { createdAt: "desc" },
-//       include: {
-//         author: {
-//           select: { id: true, name: true, email: true, profileImage: true },
-//         },
-//         BlogCategory: { select: { id: true, name: true } },
-//         Comment: {
-//           orderBy: { createdAt: "asc" }, // optional: oldest first
-//           select: {
-//             id: true,
-//             name: true,
-//             email: true,
-//             content: true,
-//             createdAt: true,
-//             updatedAt: true,
-//           },
-//         },
-//       },
-//     });
-//     // Convert content string to object
-//     const postsWithContentObj = posts.map((post) => ({
-//       ...post,
-//       content: post.content ? JSON.parse(post.content) : null,
-//     }));
+  if (!post) {
+    return { ok: false, msg: "Post not found" };
+  }
 
-//     return {
-//       success: true,
-//       msg: "Posts fetched successfully",
-//       postsWithContentObj,
-//     };
-//   } catch (err) {
-//     console.error("postList error:", err);
-//     return { success: false, msg: "Failed to fetch posts" };
-//   }
-// };
+  if (!isAdmin(session.user) && post.authorId !== session.user.id) {
+    return { ok: false, msg: "Unauthorized" };
+  }
+
+  return { ok: true, post };
+}
+
+const STATUS_VALUES = ["DRAFT", "PENDING", "PUBLISH", "DECLINE"];
 
 export const postList = async () => {
   try {
-    // Get logged-in user session
-    const session = await auth();
-    if (!session?.user?.id) {
+    const session = await requireDashboardUser();
+    if (!session) {
       return { success: false, msg: "Unauthorized" };
     }
 
     const posts = await prisma.post.findMany({
-      where: {
-        authorId: session.user.id, // ✅ only this author’s posts
-      },
+      where: isAdmin(session.user) ? {} : { authorId: session.user.id },
       orderBy: { createdAt: "desc" },
       include: {
         author: {
@@ -115,7 +67,6 @@ export const postList = async () => {
       },
     });
 
-    // Parse content string → object
     const postsWithContentObj = posts.map((post) => ({
       ...post,
       content: post.content ? JSON.parse(post.content) : null,
@@ -131,22 +82,23 @@ export const postList = async () => {
     return { success: false, msg: "Failed to fetch posts" };
   }
 };
-/** ---------- Create Post ---------- */
+
 export const postCreate = async (_prevState, formData) => {
   try {
+    const session = await requireDashboardUser();
+    if (!session) {
+      return { success: false, msg: "Unauthorized" };
+    }
+
     const title = getString(formData.get("title"));
     const postSlug = getString(formData.get("postSlug"));
     const bannerAltText = getString(formData.get("bannerAltText"));
     const metaTitle = getString(formData.get("metaTitle"));
     const metaDescription = getString(formData.get("metaDescription"));
     const canonicalUrl = getString(formData.get("canonicalUrl"));
-    // const shortDesc = getString(formData.get("shortDesc"));
-    const bannerImage = getString(formData.get("bannerImage")); // ✅ now stored
-    // const content = parseContent(formData);
-    // const contentRaw = formData.get("content");
+    const bannerImage = getString(formData.get("bannerImage"));
     const contentRaw = getString(formData.get("content"));
-    const authorId = getString(formData.get("authorId")); // optional
-    const blogCategoryId = getString(formData.get("blogCategoryId")); // optional
+    const blogCategoryId = getString(formData.get("blogCategoryId"));
 
     if (!title) {
       return {
@@ -160,7 +112,6 @@ export const postCreate = async (_prevState, formData) => {
       return { success: false, msg: "Post with this title already exists" };
     }
 
-    // 🔍 Check existing slug
     const existingSlug = await prisma.post.findUnique({ where: { postSlug } });
     if (existingSlug) {
       return {
@@ -169,9 +120,8 @@ export const postCreate = async (_prevState, formData) => {
       };
     }
 
-    let content;
     try {
-      content = JSON.parse(contentRaw); // <-- parse JSON once
+      JSON.parse(contentRaw);
     } catch (err) {
       console.error("Invalid JSON content:", err);
       return { success: false, msg: "Content is invalid JSON" };
@@ -180,16 +130,16 @@ export const postCreate = async (_prevState, formData) => {
     const created = await prisma.post.create({
       data: {
         title,
-        postSlug, // store generated slug
-        // shortDesc,
+        postSlug,
         bannerImage,
         bannerAltText,
         metaTitle,
         metaDescription,
         canonicalUrl,
         content: contentRaw,
-        authorId: authorId,
-        blogCategoryId: blogCategoryId,
+        status: "PENDING",
+        authorId: session.user.id,
+        blogCategoryId,
       },
       include: {
         author: { select: { id: true, name: true, email: true } },
@@ -208,32 +158,29 @@ export const postCreate = async (_prevState, formData) => {
   }
 };
 
-/** ---------- Update Post ---------- */
 export const postUpdate = async (_prevState, formData) => {
   try {
+    const session = await requireDashboardUser();
+    if (!session) {
+      return { success: false, msg: "Unauthorized" };
+    }
+
     const id = getString(formData.get("id"));
     if (!id) return { success: false, msg: "Post id is required" };
 
+    const access = await canAccessPost(session, id);
+    if (!access.ok) {
+      return { success: false, msg: access.msg };
+    }
+
     const title = getString(formData.get("title"));
-    // const shortDesc = getString(formData.get("shortDesc"));
-    const bannerImage = getString(formData.get("bannerImage")); // ✅ now stored
-    // const content = parseContent(formData);
-    // const contentRaw = formData.get("content");
+    const bannerImage = getString(formData.get("bannerImage"));
     const contentRaw = getString(formData.get("content"));
-    const authorId = getString(formData.get("authorId")); // optional
-    const blogCategoryId = getString(formData.get("blogCategoryId")); // optional
 
     const data = {};
     if (title) data.title = title;
-    // if (shortDesc) data.shortDesc = shortDesc;
     if (contentRaw) data.content = contentRaw;
     if (bannerImage) data.bannerImage = bannerImage;
-    // if (authorId) data.authorId = authorId;
-    // if (blogCategoryId) data.blogCategoryId = blogCategoryId;
-
-    // if (formData.has("authorId") && !authorId) data.authorId = null;
-    // if (formData.has("blogCategoryId") && !blogCategoryId)
-    //   data.blogCategoryId = null;
 
     if (Object.keys(data).length === 0) {
       return { success: false, msg: "Nothing to update" };
@@ -259,9 +206,18 @@ export const postUpdate = async (_prevState, formData) => {
   }
 };
 
-/** ---------- Delete Post ---------- */
 export const deletePost = async (id) => {
   try {
+    const session = await requireDashboardUser();
+    if (!session) {
+      return { success: false, msg: "Unauthorized" };
+    }
+
+    const access = await canAccessPost(session, id);
+    if (!access.ok) {
+      return { success: false, msg: access.msg };
+    }
+
     const deleted = await prisma.post.delete({
       where: { id },
       include: {
@@ -283,32 +239,13 @@ export const deletePost = async (id) => {
   }
 };
 
-/** ---------- Get Single Post ---------- */
-// export const getPostById = async (id) => {
-//   try {
-//     const post = await prisma.post.findUnique({
-//       where: { id },
-//       include: {
-//         author: { select: { id: true, name: true, email: true } },
-//         BlogCategory: { select: { id: true, name: true } },
-//       },
-//     });
-
-//     if (!post) return { success: false, msg: "Post not found" };
-
-//     return {
-//       success: true,
-//       msg: "Post fetched successfully",
-//       post,
-//     };
-//   } catch (err) {
-//     console.error("getPostById error:", err);
-//     return { success: false, msg: "Failed to fetch post" };
-//   }
-// };
-
 export const getPostById = async (id) => {
   try {
+    const session = await requireDashboardUser();
+    if (!session) {
+      return { success: false, msg: "Unauthorized" };
+    }
+
     const post = await prisma.post.findUnique({
       where: { id },
       include: {
@@ -318,8 +255,10 @@ export const getPostById = async (id) => {
     });
 
     if (!post) return { success: false, msg: "Post not found" };
+    if (!isAdmin(session.user) && post.authorId !== session.user.id) {
+      return { success: false, msg: "Unauthorized" };
+    }
 
-    // Parse content if it's a JSON string
     let parsedContent = {};
     try {
       parsedContent = post.content ? JSON.parse(post.content) : {};
@@ -339,5 +278,37 @@ export const getPostById = async (id) => {
   } catch (err) {
     console.error("getPostById error:", err);
     return { success: false, msg: "Failed to fetch post" };
+  }
+};
+
+export const updatePostStatus = async ({ postId, status, note }) => {
+  try {
+    const session = await auth();
+    if (!isAdmin(session?.user)) {
+      return { success: false, msg: "Unauthorized" };
+    }
+
+    if (!postId || !STATUS_VALUES.includes(status)) {
+      return { success: false, msg: "Invalid status" };
+    }
+    if (status === "DECLINE" && !note?.trim()) {
+      return { success: false, msg: "Enter a decline note" };
+    }
+
+    const data = {
+      status,
+      declineNote: status === "DECLINE" ? note : null,
+    };
+
+    await prisma.post.update({
+      where: { id: postId },
+      data,
+    });
+
+    revalidatePath("/dashboard/blog");
+    return { success: true, msg: "Status updated" };
+  } catch (err) {
+    console.error("updatePostStatus error:", err);
+    return { success: false, msg: "Failed to update status" };
   }
 };
